@@ -1,0 +1,67 @@
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import com.google.gson.Gson;
+
+public class PokeAPI {
+
+    private static final String API_URL = "https://pokeapi.co/api/v2/pokemon/";
+    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final Gson gson = new Gson();
+    private static final List<Pokemon> pokemonList = new ArrayList<>();
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.print("Enter Pokémon name or ID (or 'exit' to quit): ");
+            String input = scanner.nextLine();
+            if (input.equalsIgnoreCase("exit")) {
+                break;
+            }
+            fetchPokemonData(input);
+            displayPokemonList();
+        }
+        scanner.close();
+    }
+
+    private static void fetchPokemonData(String nameOrId) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(API_URL + nameOrId))
+                .build();
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                Pokemon pokemon = gson.fromJson(response.body(), Pokemon.class);
+                pokemonList.add(pokemon);
+                System.out.println("Fetched Pokémon: " + pokemon);
+            } else {
+                System.out.println("Error: Pokémon not found.");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void displayPokemonList() {
+        System.out.println("List of requested Pokémon:");
+        for (Pokemon pokemon : pokemonList) {
+            System.out.println(pokemon);
+        }
+    }
+
+    static class Pokemon {
+        String name;
+        int height;
+        int weight;
+
+        @Override
+        public String toString() {
+            return "Name: " + name + ", Height: " + height + ", Weight: " + weight;
+        }
+    }
+}
